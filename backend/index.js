@@ -42,6 +42,8 @@ app.set('trust proxy', 1)
 app.use(cors({ origin: true, credentials: true }))
 app.use(express.json({ limit: '5mb' }))
 
+const isProd = process.env.NODE_ENV === 'production'
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'dev-only-insecure-secret-change-me',
@@ -50,8 +52,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // set true once served over HTTPS
+      sameSite: process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax'),
+      secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   }),
@@ -75,4 +77,10 @@ app.use('/api/tests', requireAuth, testsRouter)
 app.use('/api/attempts', requireAuth, attemptsRouter)
 
 connectDB()
-app.listen(PORT, () => console.log(`[server] API listening on http://localhost:${PORT}`))
+
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`[server] API listening on http://localhost:${PORT}`))
+}
+
+export default app
+
