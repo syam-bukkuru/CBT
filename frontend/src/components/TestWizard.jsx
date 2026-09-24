@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ClipboardPaste,
   FileSpreadsheet,
@@ -115,6 +115,11 @@ export default function TestWizard({
 
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  // `disabled={saving}` alone leaves a window before the re-render lands — a fast
+  // double-click (or an impatient second click on a slow connection) could fire the
+  // handler twice and, on the create path, publish the same test twice. This ref is
+  // checked synchronously, closing that window regardless of render timing.
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     if (!existingTest) return
@@ -216,10 +221,12 @@ export default function TestWizard({
     }))
 
   const handlePublish = async () => {
+    if (submittingRef.current) return
     setError('')
     if (!title.trim()) return setError('Enter a test title.')
     if (validRows.length === 0) return setError('Add at least one complete question.')
 
+    submittingRef.current = true
     setSaving(true)
     try {
       let finalSubjectId = subjectId
@@ -243,14 +250,17 @@ export default function TestWizard({
     } catch (err) {
       setError(err.message || 'Could not publish the test.')
       setSaving(false)
+      submittingRef.current = false
     }
   }
 
   const handleUpdate = async () => {
+    if (submittingRef.current) return
     setError('')
     if (!title.trim()) return setError('Enter a test title.')
     if (!questionsLocked && validRows.length === 0) return setError('Add at least one complete question.')
 
+    submittingRef.current = true
     setSaving(true)
     try {
       const payload = { title: title.trim(), timeLimitMinutes: Number(timeLimitMinutes) || 30 }
@@ -259,6 +269,7 @@ export default function TestWizard({
     } catch (err) {
       setError(err.message || 'Could not save changes.')
       setSaving(false)
+      submittingRef.current = false
     }
   }
 
@@ -276,9 +287,9 @@ export default function TestWizard({
             const done = step > n
             const displayLabel = isEdit && n === 3 ? 'Duration & Save' : label
             return (
-              <div key={label} className="flex items-center gap-2 flex-1">
+              <div key={label} className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                     done
                       ? 'bg-emerald-600 text-white'
                       : active
@@ -288,10 +299,12 @@ export default function TestWizard({
                 >
                   {n}
                 </div>
-                <span className={`text-xs font-medium ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>
+                <span
+                  className={`text-[11px] sm:text-xs font-medium truncate ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}
+                >
                   {displayLabel}
                 </span>
-                {n < STEPS.length && <div className="flex-1 h-px bg-[var(--border-color)]" />}
+                {n < STEPS.length && <div className="flex-1 h-px bg-[var(--border-color)] min-w-2" />}
               </div>
             )
           })}

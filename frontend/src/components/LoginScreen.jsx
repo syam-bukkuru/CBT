@@ -18,7 +18,8 @@ export default function LoginScreen() {
     setBusy(true)
     try {
       await login(email.trim(), password)
-      navigate(location.state?.from?.pathname || '/', { replace: true })
+      const from = location.state?.from
+      navigate(from ? `${from.pathname}${from.search || ''}` : '/', { replace: true })
     } catch (err) {
       setError(err.message || 'Could not log in.')
     } finally {
@@ -78,7 +79,11 @@ export default function LoginScreen() {
 
           <p className="text-xs text-center text-[var(--text-muted)]">
             New to the group?{' '}
-            <Link to="/register" className="text-blue-600 font-semibold hover:underline">
+            <Link
+              to="/register"
+              state={location.state}
+              className="text-blue-600 font-semibold hover:underline"
+            >
               Create an account
             </Link>
           </p>

@@ -1,5 +1,6 @@
-import React from 'react'
-import { Sparkles, Clock, FileText, User, Play } from 'lucide-react'
+import React, { useState } from 'react'
+import { Sparkles, Clock, FileText, User, Play, Share2, Check } from 'lucide-react'
+import { shareTest } from '../lib/share.js'
 
 function isToday(dateStr) {
   const d = new Date(dateStr)
@@ -12,8 +13,17 @@ function isToday(dateStr) {
 }
 
 export default function TodaysTests({ tests, onStartTest }) {
+  const [sharedId, setSharedId] = useState(null)
   const todays = tests.filter((t) => isToday(t.createdAt))
   if (todays.length === 0) return null
+
+  const handleShare = async (test) => {
+    const result = await shareTest(test).catch(() => 'unsupported')
+    if (result === 'copied' || result === 'shared') {
+      setSharedId(test._id)
+      setTimeout(() => setSharedId((id) => (id === test._id ? null : id)), 1500)
+    }
+  }
 
   return (
     <div className="rounded-xl border-2 border-amber-400/60 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-slate-900 p-5 md:p-6 shadow-sm">
@@ -51,9 +61,22 @@ export default function TodaysTests({ tests, onStartTest }) {
                 </span>
               </div>
             </div>
-            <button onClick={() => onStartTest(test)} className="btn btn-primary text-xs mt-3 w-full">
-              <Play className="w-3.5 h-3.5 fill-current" /> Start Test
-            </button>
+            <div className="flex items-center gap-1.5 mt-3">
+              <button onClick={() => onStartTest(test)} className="btn btn-primary text-xs flex-1">
+                <Play className="w-3.5 h-3.5 fill-current" /> Start Test
+              </button>
+              <button
+                onClick={() => handleShare(test)}
+                className="btn btn-outline text-xs px-2.5"
+                title="Share test link"
+              >
+                {sharedId === test._id ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Share2 className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
           </div>
         ))}
       </div>

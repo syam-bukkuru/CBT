@@ -11,7 +11,16 @@ import ExamScreen from './components/ExamScreen.jsx'
 import ResultScreen from './components/ResultScreen.jsx'
 import LeaderboardScreen from './components/LeaderboardScreen.jsx'
 import HistoryScreen from './components/HistoryScreen.jsx'
+import {
+  TopicListSkeleton,
+  ExamSkeleton,
+  ResultSkeleton,
+  LeaderboardSkeleton,
+  HistorySkeleton,
+  FormSkeleton,
+} from './components/Skeletons.jsx'
 import { useAuth } from './AuthContext.jsx'
+import { useToast } from './ToastContext.jsx'
 import { requestExamFullscreen } from './lib/fullscreen.js'
 import * as api from './api.js'
 
@@ -62,9 +71,11 @@ function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { appMode } = useAppMode()
+  const { confirm, showToast } = useToast()
   const [subjects, setSubjects] = useState([])
   const [tests, setTests] = useState([])
   const [loadError, setLoadError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     try {
@@ -74,6 +85,8 @@ function DashboardPage() {
       setLoadError('')
     } catch (err) {
       setLoadError(err.message || 'Could not reach the server. Is it running on port 5000?')
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -84,15 +97,27 @@ function DashboardPage() {
   const handleCreateSubject = async (payload) => {
     await api.createSubject(payload)
     await refresh()
+    showToast('Subject created.', { type: 'success' })
   }
   const handleUpdateSubject = async (id, payload) => {
     await api.updateSubject(id, payload)
     await refresh()
+    showToast('Subject updated.', { type: 'success' })
   }
   const handleDeleteSubject = async (id) => {
-    if (!window.confirm('Delete this subject folder and everything inside it (topics, tests, attempts)?')) return
-    await api.deleteSubject(id)
-    await refresh()
+    const ok = await confirm('Delete this subject folder and everything inside it (topics, tests, attempts)?', {
+      title: 'Delete subject?',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await api.deleteSubject(id)
+      await refresh()
+      showToast('Subject deleted.', { type: 'success' })
+    } catch (err) {
+      showToast(err.message || 'Could not delete the subject.', { type: 'error' })
+    }
   }
 
   return (
@@ -103,6 +128,7 @@ function DashboardPage() {
         tests={tests}
         user={user}
         appMode={appMode}
+        loading={loading}
         onOpenSubject={(s) => navigate(`/subjects/${s._id}`)}
         onStartTest={(test) => {
           requestExamFullscreen()
@@ -118,13 +144,16 @@ function DashboardPage() {
 
 function TopicListPage() {
   const { subjectId } = useParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { appMode } = useAppMode()
+  const { confirm, showToast } = useToast()
   const [subject, setSubject] = useState(null)
   const [topics, setTopics] = useState([])
   const [tests, setTests] = useState([])
   const [loadError, setLoadError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     try {
@@ -139,6 +168,8 @@ function TopicListPage() {
       setLoadError('')
     } catch (err) {
       setLoadError(err.message || 'Could not reach the server.')
+    } finally {
+      setLoading(false)
     }
   }, [subjectId])
 
@@ -149,25 +180,50 @@ function TopicListPage() {
   const handleCreateTopic = async (payload) => {
     await api.createTopic({ ...payload, subject: subjectId })
     await refresh()
+    showToast('Topic created.', { type: 'success' })
   }
   const handleUpdateTopic = async (id, payload) => {
     await api.updateTopic(id, payload)
     await refresh()
+    showToast('Topic updated.', { type: 'success' })
   }
   const handleDeleteTopic = async (id) => {
-    if (!window.confirm('Delete this topic and all of its tests?')) return
-    await api.deleteTopic(id)
-    await refresh()
+    const ok = await confirm('Delete this topic and all of its tests?', {
+      title: 'Delete topic?',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await api.deleteTopic(id)
+      await refresh()
+      showToast('Topic deleted.', { type: 'success' })
+    } catch (err) {
+      showToast(err.message || 'Could not delete the topic.', { type: 'error' })
+    }
   }
   const handleUpdateTest = async (id, payload) => {
     await api.updateTest(id, payload)
     await refresh()
+    showToast('Test updated.', { type: 'success' })
   }
   const handleDeleteTest = async (id) => {
-    if (!window.confirm('Delete this test and its attempt history?')) return
-    await api.deleteTest(id)
-    await refresh()
+    const ok = await confirm('Delete this test and its attempt history?', {
+      title: 'Delete test?',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await api.deleteTest(id)
+      await refresh()
+      showToast('Test deleted.', { type: 'success' })
+    } catch (err) {
+      showToast(err.message || 'Could not delete the test.', { type: 'error' })
+    }
   }
+
+  if (loading) return <TopicListSkeleton />
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -182,6 +238,7 @@ function TopicListPage() {
         tests={tests}
         user={user}
         appMode={appMode}
+        initialExpandedTopicId={searchParams.get('topic') || ''}
         onCreateTopic={handleCreateTopic}
         onUpdateTopic={handleUpdateTopic}
         onDeleteTopic={handleDeleteTopic}
@@ -235,7 +292,7 @@ function TestEditPage() {
   }
 
   if (error) return <Loading label={error} />
-  if (!test) return <Loading label="Loading test…" />
+  if (!test) return <FormSkeleton />
 
   return <TestWizard existingTest={test} onCancel={() => navigate(-1)} onUpdate={handleUpdate} />
 }
@@ -244,6 +301,7 @@ function ExamPage() {
   const { testId } = useParams()
   const navigate = useNavigate()
   const setHeaderMeta = useSetHeaderMeta()
+  const { showToast } = useToast()
   const [test, setTest] = useState(null)
   const [error, setError] = useState('')
 
@@ -278,15 +336,15 @@ function ExamPage() {
         const attempt = await api.createAttempt(payload)
         navigate(`/tests/${testId}/result/${attempt._id}`, { replace: true })
       } catch (err) {
-        window.alert(`Could not save the attempt: ${err.message}`)
+        showToast(`Could not save the attempt: ${err.message}`, { type: 'error', duration: 8000 })
         navigate('/')
       }
     },
-    [testId, navigate],
+    [testId, navigate, showToast],
   )
 
   if (error) return <Loading label={error} />
-  if (!test) return <Loading label="Loading test…" />
+  if (!test) return <ExamSkeleton />
 
   return <ExamScreen test={test} onSubmit={handleSubmit} onTick={handleTick} />
 }
@@ -308,7 +366,7 @@ function ResultPage() {
   }, [testId, attemptId])
 
   if (error) return <Loading label={error} />
-  if (!test || !attempt) return <Loading label="Loading result…" />
+  if (!test || !attempt) return <ResultSkeleton />
 
   return (
     <ResultScreen
@@ -325,13 +383,23 @@ function HistoryPage() {
   const navigate = useNavigate()
   const [attempts, setAttempts] = useState([])
   const [loadError, setLoadError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     api
       .getAttempts({ mine: true })
       .then(setAttempts)
       .catch((err) => setLoadError(err.message || 'Could not load your history.'))
+      .finally(() => setLoading(false))
   }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <HistorySkeleton />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -362,7 +430,7 @@ function LeaderboardPage() {
   }, [testId])
 
   if (error) return <Loading label={error} />
-  if (!test) return <Loading label="Loading leaderboard…" />
+  if (!test) return <LeaderboardSkeleton />
 
   return (
     <LeaderboardScreen
@@ -370,6 +438,10 @@ function LeaderboardPage() {
       rows={rows}
       currentUserId={user?.id}
       onBackToDashboard={() => navigate('/')}
+      onReattempt={() => {
+        requestExamFullscreen()
+        navigate(`/tests/${testId}/exam`)
+      }}
     />
   )
 }

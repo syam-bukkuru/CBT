@@ -3,12 +3,15 @@ import { Database, Cpu, BookOpen, FolderPlus, Trash2, Pencil, Folder } from 'luc
 import NewSubjectModal from './NewSubjectModal.jsx'
 import EditSubjectModal from './EditSubjectModal.jsx'
 import TodaysTests from './TodaysTests.jsx'
+import MotivationalQuote from './MotivationalQuote.jsx'
+import { DashboardSkeleton } from './Skeletons.jsx'
 
 export default function TestDashboard({
   subjects,
   tests,
   user,
   appMode,
+  loading,
   onOpenSubject,
   onStartTest,
   onCreateSubject,
@@ -37,6 +40,7 @@ export default function TestDashboard({
             Pick a subject folder to browse its topics and tests, or jump straight into whatever
             your group published today below.
           </p>
+          <MotivationalQuote />
           {canCreate && (
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <button
@@ -50,6 +54,10 @@ export default function TestDashboard({
         </div>
       </div>
 
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
       {/* Today's Tests highlight — a study/attempt feature, not relevant while authoring */}
       {appMode !== 'creation' && <TodaysTests tests={tests} onStartTest={onStartTest} />}
 
@@ -139,6 +147,8 @@ export default function TestDashboard({
           </div>
         )}
       </div>
+        </>
+      )}
 
       {showNewSubject && (
         <NewSubjectModal

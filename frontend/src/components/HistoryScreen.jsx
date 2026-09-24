@@ -83,14 +83,14 @@ export default function HistoryScreen({ attempts, onOpenAttempt }) {
                     : 'border-[var(--border-color)] hover:bg-slate-50 dark:hover:bg-slate-800/40'
                 }`}
               >
-                <span className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                  <Clock className="w-3.5 h-3.5" />
-                  {fmtDate(a.submittedAt)}
-                  <span className="hidden sm:inline">· {fmtTime(a.durationSeconds)}</span>
+                <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] min-w-0">
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{fmtDate(a.submittedAt)}</span>
+                  <span className="hidden sm:inline shrink-0">· {fmtTime(a.durationSeconds)}</span>
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 shrink-0">
                   {a._id === g.best._id && (
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                    <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
                       <Trophy className="w-3.5 h-3.5" /> Best
                     </span>
                   )}

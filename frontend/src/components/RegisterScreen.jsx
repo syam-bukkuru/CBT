@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ShieldCheck, UserPlus } from 'lucide-react'
 import { useAuth } from '../AuthContext.jsx'
 
 export default function RegisterScreen() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,7 +20,8 @@ export default function RegisterScreen() {
     setBusy(true)
     try {
       await register(name.trim(), email.trim(), password)
-      navigate('/', { replace: true })
+      const from = location.state?.from
+      navigate(from ? `${from.pathname}${from.search || ''}` : '/', { replace: true })
     } catch (err) {
       setError(err.message || 'Could not create your account.')
     } finally {

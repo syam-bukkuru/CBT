@@ -222,7 +222,7 @@ export default function ExamScreen({ test, onSubmit, onTick }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_320px] gap-4 md:gap-6">
         {/* Question pane */}
         <div className="card p-6 flex flex-col">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3 mb-4">
@@ -282,25 +282,29 @@ export default function ExamScreen({ test, onSubmit, onTick }) {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 mt-6 pt-4 border-t border-[var(--border-color)]">
-            <button onClick={markForReviewAndNext} className="btn btn-purple text-xs">
-              <Bookmark className="w-3.5 h-3.5" /> Mark for Review &amp; Next
-            </button>
-            <button onClick={clearResponse} className="btn btn-outline text-xs">
-              <Eraser className="w-3.5 h-3.5" /> Clear Response
-            </button>
-            <div className="flex-1" />
-            <button onClick={() => goTo(current - 1)} disabled={current === 0} className="btn btn-outline text-xs">
-              <ChevronLeft className="w-3.5 h-3.5" /> Previous
-            </button>
-            <button onClick={saveAndNext} className="btn btn-success text-xs">
-              Save &amp; Next <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-6 pt-4 border-t border-[var(--border-color)]">
+            <div className="flex flex-wrap gap-2">
+              <button onClick={markForReviewAndNext} className="btn btn-purple text-xs">
+                <Bookmark className="w-3.5 h-3.5" /> Mark for Review &amp; Next
+              </button>
+              <button onClick={clearResponse} className="btn btn-outline text-xs">
+                <Eraser className="w-3.5 h-3.5" /> Clear Response
+              </button>
+            </div>
+            <div className="hidden sm:block flex-1" />
+            <div className="flex gap-2 justify-between sm:justify-end">
+              <button onClick={() => goTo(current - 1)} disabled={current === 0} className="btn btn-outline text-xs">
+                <ChevronLeft className="w-3.5 h-3.5" /> Previous
+              </button>
+              <button onClick={saveAndNext} className="btn btn-success text-xs">
+                Save &amp; Next <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Palette pane */}
-        <div className="card p-5 h-max lg:sticky lg:top-4">
+        <div className="card p-5 h-max md:sticky md:top-4">
           <div className="mb-3 text-center">
             <div className="text-xs text-[var(--text-muted)]">Time Remaining</div>
             <div

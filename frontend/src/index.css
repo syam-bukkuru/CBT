@@ -2,23 +2,27 @@
 @import "tailwindcss";
 
 :root {
-  --primary-blue: #1e3a8a;
+  --primary-blue: #2563eb;
   --primary-blue-hover: #1d4ed8;
-  --accent-cyan: #0284c7;
-  --tcs-header-bg: #1c2d42;
-  --tcs-bar-bg: #2b3e55;
-  --bg-main: #f8fafc;
+  --accent-cyan: #0891b2;
+  --tcs-header-bg: #111c2e;
+  --tcs-bar-bg: #1c2c42;
+  /* A page background with a slight blue-gray tint (rather than near-white) so white
+     cards actually lift off it — #f8fafc next to a #ffffff card read as flat/no contrast. */
+  --bg-main: #eef2f7;
   --card-bg: #ffffff;
   --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --text-muted: #5b6b81;
+  --border-color: #dbe1ea;
 
   /* TCS iON Status Palette Colors */
   --status-answered: #16a34a;        /* Green */
   --status-not-answered: #dc2626;    /* Red */
   --status-not-visited: #94a3b8;     /* Gray */
-  --status-marked: #9333ea;          /* Purple */
-  --status-ans-marked: #7e22ce;      /* Dark Purple w/ indicator */
+  --status-not-visited-bg: #eef1f5;  /* distinct fill so it doesn't disappear on a white palette panel */
+  --status-not-visited-border: #cbd5e1;
+  --status-marked: #7c3aed;          /* Purple */
+  --status-ans-marked: #6d28d9;      /* Dark Purple w/ indicator */
 }
 
 [data-theme='dark'] {
@@ -29,6 +33,8 @@
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: #334155;
+  --status-not-visited-bg: #1e293b;
+  --status-not-visited-border: #334155;
 }
 
 body {
@@ -46,6 +52,14 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* Everything below lives in the `components` layer (below Tailwind's own `utilities`
+   layer) so that combining a Tailwind color/border/etc. utility with one of these
+   classes on the same element lets the utility win, as expected — e.g. `card bg-slate-900`
+   should render as a dark card, not have `.card`'s --card-bg variable silently win just
+   because this stylesheet is textually written after the Tailwind import. Without this,
+   unlayered custom CSS always beats layered (Tailwind) rules regardless of source order. */
+@layer components {
 
 /* Base Utility Classes */
 .btn {
@@ -68,11 +82,11 @@ body {
 }
 
 .btn-primary {
-  background-color: #1e3a8a;
+  background-color: var(--primary-blue);
   color: #ffffff;
 }
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: var(--primary-blue-hover);
 }
 
 .btn-success {
@@ -112,7 +126,7 @@ body {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 10px rgb(15 23 42 / 0.05);
 }
 
 /* Modal Overlay */
@@ -167,7 +181,11 @@ body {
 
 .status-answered { background-color: var(--status-answered); color: #ffffff; }
 .status-not-answered { background-color: var(--status-not-answered); color: #ffffff; }
-.status-not-visited { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+.status-not-visited {
+  background-color: var(--status-not-visited-bg);
+  color: var(--text-main);
+  border: 1px solid var(--status-not-visited-border);
+}
 .status-marked { background-color: var(--status-marked); color: #ffffff; border-radius: 50%; }
 .status-ans-marked { background-color: var(--status-ans-marked); color: #ffffff; border-radius: 50%; }
 .status-ans-marked::after {
@@ -181,3 +199,16 @@ body {
   border-radius: 50%;
   border: 1px solid #ffffff;
 }
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+} /* end @layer components */

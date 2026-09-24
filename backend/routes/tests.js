@@ -174,19 +174,21 @@ router.post('/', async (req, res) => {
 // questions are locked once an attempt exists, to protect scoring/leaderboard history.
 router.patch('/:id', async (req, res) => {
   try {
-    const test = await Test.findById(req.params.id)
+    const test = await Test.findById(req.params.id).select('createdBy timeLimitMinutes').lean()
     if (!test) return res.status(404).json({ error: 'Test not found' })
     if (!isOwner(test, req.user.id)) {
       return res.status(403).json({ error: 'Only the creator can edit this test' })
     }
 
     const { title, timeLimitMinutes, questions } = req.body || {}
+    const update = {}
+
     if (title !== undefined) {
       if (!title.trim()) return res.status(400).json({ error: 'Test title is required' })
-      test.title = title.trim()
+      update.title = title.trim()
     }
     if (timeLimitMinutes !== undefined) {
-      test.timeLimitMinutes = Number(timeLimitMinutes) || test.timeLimitMinutes
+      update.timeLimitMinutes = Number(timeLimitMinutes) || test.timeLimitMinutes
     }
     if (questions !== undefined) {
       const hasAttempts = await Attempt.exists({ testId: test._id })
@@ -197,11 +199,12 @@ router.patch('/:id', async (req, res) => {
       if (cleanQuestions.length === 0) {
         return res.status(400).json({ error: 'At least one valid question is required' })
       }
-      test.questions = cleanQuestions
+      // $set replaces the whole array atomically at the database level — never merges
+      // or appends to whatever was there before, regardless of its previous length.
+      update.questions = cleanQuestions
     }
-    await test.save()
 
-    const populated = await Test.findById(test._id)
+    const populated = await Test.findByIdAndUpdate(test._id, { $set: update }, { new: true, runValidators: true })
       .populate('subject', 'name')
       .populate('topic', 'name')
       .populate('createdBy', 'name')
